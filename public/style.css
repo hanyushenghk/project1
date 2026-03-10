@@ -1,11 +1,11 @@
 :root {
-  --bg: #0f0f0f;
-  --surface: #1a1a1a;
-  --border: #2a2a2a;
-  --text: #e8e8e8;
-  --muted: #888;
-  --accent: #c9a227;
-  --accent-dim: rgba(201, 162, 39, 0.15);
+  --bg: #ffffff;
+  --surface: #f8f8f8;
+  --border: #e0e0e0;
+  --text: #1a1a1a;
+  --muted: #666;
+  --accent: #b8860b;
+  --accent-dim: rgba(184, 134, 11, 0.12);
   --radius: 12px;
   --font-serif: 'DM Serif Display', Georgia, serif;
   --font-sans: 'Source Sans 3', system-ui, sans-serif;
@@ -66,7 +66,7 @@ body {
   margin-bottom: 0.75rem;
   padding: 0.25rem 0.6rem;
   background: var(--accent);
-  color: var(--bg);
+  color: #1a1a1a;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;

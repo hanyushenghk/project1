@@ -1,9 +1,10 @@
 const API = '/api/news';
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 每 5 分钟更新一次
+const REFRESH_INTERVAL_MS = 2 * 60 * 1000; // 每 2 分钟自动更新
 
 const $featured = document.getElementById('latest-featured');
 const $list = document.getElementById('news-list');
 const $updateStatus = document.getElementById('update-status');
+let refreshCountdownTimer = null;
 
 function formatDate(iso) {
   if (!iso) return '';
@@ -73,6 +74,27 @@ function setUpdateStatus(text) {
   if ($updateStatus) $updateStatus.textContent = text;
 }
 
+function startRefreshCountdown() {
+  if (refreshCountdownTimer) clearInterval(refreshCountdownTimer);
+  let left = Math.ceil(REFRESH_INTERVAL_MS / 1000);
+  function tick() {
+    if (left <= 0) {
+      if (refreshCountdownTimer) clearInterval(refreshCountdownTimer);
+      refreshCountdownTimer = null;
+      return;
+    }
+    const min = Math.floor(left / 60);
+    const sec = left % 60;
+    if ($updateStatus) {
+      const status = $updateStatus.getAttribute('data-last-update') || '';
+      $updateStatus.textContent = status + (status ? ' · ' : '') + (min > 0 ? min + ' 分 ' : '') + sec + ' 秒后自动刷新';
+    }
+    left--;
+  }
+  tick();
+  refreshCountdownTimer = setInterval(tick, 1000);
+}
+
 async function load() {
   setLoading(true);
   try {
@@ -83,9 +105,12 @@ async function load() {
     const latest = articles[0] || null;
     renderFeatured(latest);
     renderList(articles);
-    setUpdateStatus('上次更新：' + new Date().toLocaleString('zh-CN'));
+    const lastUpdate = '上次更新：' + new Date().toLocaleString('zh-CN');
+    setUpdateStatus(lastUpdate);
+    if ($updateStatus) $updateStatus.setAttribute('data-last-update', lastUpdate);
+    startRefreshCountdown();
   } catch (err) {
-    setError(err.message || '无法加载资讯，请确认服务器已启动。');
+    setError(err.message || '无法加载资讯。请先运行 npm start，再在浏览器打开 http://localhost:3000');
     setUpdateStatus('');
   }
 }
