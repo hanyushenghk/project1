@@ -1,10 +1,59 @@
 const API = '/api/news';
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000; // 每 2 分钟自动更新
+const STORAGE_KEY = 'project1-news-data';
 
 const $featured = document.getElementById('latest-featured');
 const $list = document.getElementById('news-list');
 const $updateStatus = document.getElementById('update-status');
 let refreshCountdownTimer = null;
+
+function getStoredData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { likes: {}, comments: {} };
+    const data = JSON.parse(raw);
+    return {
+      likes: data.likes || {},
+      comments: data.comments || {},
+    };
+  } catch {
+    return { likes: {}, comments: {} };
+  }
+}
+
+function setStoredData(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (_) {}
+}
+
+function getLikeCount(link) {
+  return getStoredData().likes[link] || 0;
+}
+
+function setLikeCount(link, count) {
+  const data = getStoredData();
+  data.likes[link] = Math.max(0, count);
+  setStoredData(data);
+}
+
+function toggleLike(link) {
+  const data = getStoredData();
+  const cur = data.likes[link] || 0;
+  data.likes[link] = cur + 1;
+  setStoredData(data);
+}
+
+function getComments(link) {
+  return getStoredData().comments[link] || [];
+}
+
+function addComment(link, text) {
+  const data = getStoredData();
+  if (!data.comments[link]) data.comments[link] = [];
+  data.comments[link].push(text.trim());
+  setStoredData(data);
+}
 
 function formatDate(iso) {
   if (!iso) return '';
@@ -16,6 +65,27 @@ function formatDate(iso) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function renderArticleActions(link, options) {
+  const { showCommentBox = false } = options || {};
+  const likeCount = getLikeCount(link);
+  const comments = getComments(link);
+  const commentCount = comments.length;
+  return `
+    <div class="article-actions" data-article-link="${escapeHtml(link)}">
+      <button type="button" class="btn-action btn-comment" aria-label="评论">💬 评论 ${commentCount > 0 ? commentCount : ''}</button>
+      <button type="button" class="btn-action btn-like" aria-label="点赞">❤️ 点赞 ${likeCount > 0 ? likeCount : ''}</button>
+      <button type="button" class="btn-action btn-share" aria-label="转发">🔗 转发</button>
+      <div class="comment-box" style="display:${showCommentBox ? 'block' : 'none'}">
+        <ul class="comment-list">${comments.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul>
+        <div class="comment-form">
+          <input type="text" class="comment-input" placeholder="写一条评论…" maxlength="500" />
+          <button type="button" class="btn-submit-comment">发送</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderFeatured(article) {
@@ -30,6 +100,7 @@ function renderFeatured(article) {
     <h2 class="title"><a href="${escapeHtml(article.link)}" target="_blank" rel="noopener">${escapeHtml(article.title)}</a></h2>
     <p class="meta">${escapeHtml(article.source)} · ${formatDate(article.pubDate)}</p>
     ${article.content ? `<p class="summary">${escapeHtml(article.content.slice(0, 200))}${article.content.length > 200 ? '…' : ''}</p>` : ''}
+    ${renderArticleActions(article.link)}
   `;
 }
 
@@ -41,13 +112,78 @@ function renderList(articles) {
   $list.innerHTML = articles
     .map(
       (a, i) => `
-    <li>
+    <li data-article-link="${escapeHtml(a.link)}">
       <h3 class="item-title"><a href="${escapeHtml(a.link)}" target="_blank" rel="noopener">${escapeHtml(a.title)}</a></h3>
       <p class="item-meta">#${i + 1} · ${escapeHtml(a.source)} · ${formatDate(a.pubDate)}</p>
+      ${renderArticleActions(a.link)}
     </li>
   `
     )
     .join('');
+}
+
+
+function bindArticleActions() {
+  document.querySelectorAll('.article-actions').forEach((el) => {
+    const link = el.getAttribute('data-article-link');
+    if (!link) return;
+    const commentBtn = el.querySelector('.btn-comment');
+    const likeBtn = el.querySelector('.btn-like');
+    const shareBtn = el.querySelector('.btn-share');
+    const commentBox = el.querySelector('.comment-box');
+    const commentInput = el.querySelector('.comment-input');
+    const submitBtn = el.querySelector('.btn-submit-comment');
+
+    if (commentBtn && commentBox) {
+      commentBtn.addEventListener('click', () => {
+        const isOpen = commentBox.style.display === 'block';
+        commentBox.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen && commentInput) commentInput.focus();
+      });
+    }
+    if (likeBtn) {
+      likeBtn.addEventListener('click', () => {
+        const data = getStoredData();
+        const cur = data.likes[link] || 0;
+        data.likes[link] = cur + 1;
+        setStoredData(data);
+        likeBtn.innerHTML = `❤️ 点赞 ${cur + 1}`;
+      });
+    }
+    if (shareBtn) {
+      shareBtn.addEventListener('click', () => {
+        const title = el.closest('li, .latest-featured')?.querySelector('.item-title a, .title a')?.textContent?.trim() || '新闻';
+        if (navigator.share) {
+          navigator.share({ title, url: link }).catch(() => copyLink(link));
+        } else {
+          copyLink(link);
+        }
+      });
+    }
+    function copyLink(url) {
+      navigator.clipboard.writeText(url).then(() => {
+        shareBtn.textContent = '🔗 已复制链接';
+        setTimeout(() => { shareBtn.innerHTML = '🔗 转发'; }, 1500);
+      }).catch(() => { shareBtn.textContent = '🔗 转发'; });
+    }
+    if (submitBtn && commentInput) {
+      const doSubmit = () => {
+        const text = commentInput.value.trim();
+        if (!text) return;
+        addComment(link, text);
+        commentInput.value = '';
+        const ul = commentBox.querySelector('.comment-list');
+        if (ul) {
+          const li = document.createElement('li');
+          li.textContent = text;
+          ul.appendChild(li);
+        }
+        if (commentBtn) commentBtn.innerHTML = `💬 评论 ${getComments(link).length}`;
+      };
+      submitBtn.addEventListener('click', doSubmit);
+      commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSubmit(); });
+    }
+  });
 }
 
 function escapeHtml(s) {
@@ -105,6 +241,7 @@ async function load() {
     const latest = articles[0] || null;
     renderFeatured(latest);
     renderList(articles);
+    bindArticleActions();
     const lastUpdate = '上次更新：' + new Date().toLocaleString('zh-CN');
     setUpdateStatus(lastUpdate);
     if ($updateStatus) $updateStatus.setAttribute('data-last-update', lastUpdate);
