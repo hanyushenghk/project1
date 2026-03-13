@@ -60,9 +60,9 @@ app.get('/api/news', async (req, res) => {
     const items = await fetchAllItems();
     // Sort by date descending (newest first)
     items.sort((a, b) => (new Date(b.pubDate) - new Date(a.pubDate)));
-    // Return exactly 10 latest
-    const latest10 = items.slice(0, 10);
-    res.json({ articles: latest10 });
+    // Return up to 50 for client-side archive (keep ~1 week)
+    const latest = items.slice(0, 50);
+    res.json({ articles: latest });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch news', articles: [] });

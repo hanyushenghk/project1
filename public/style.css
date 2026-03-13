@@ -261,3 +261,57 @@ body {
   font-size: 0.75rem;
   color: var(--muted);
 }
+
+/* 分页 */
+.pagination {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.pagination-btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pagination-prev,
+.pagination-next,
+.pagination-num {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.pagination-prev:hover:not(:disabled),
+.pagination-next:hover:not(:disabled),
+.pagination-num:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pagination-num.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1a1a;
+}
+
+.pagination-prev:disabled,
+.pagination-next:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

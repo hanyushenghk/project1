@@ -52,8 +52,8 @@ module.exports = async function handler(req, res) {
   try {
     const items = await fetchAllItems();
     items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-    const latest10 = items.slice(0, 10);
-    res.status(200).json({ articles: latest10 });
+    const latest = items.slice(0, 50);
+    res.status(200).json({ articles: latest });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch news', articles: [] });
