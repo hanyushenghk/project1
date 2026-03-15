@@ -33,17 +33,15 @@ function saveArchive(articles) {
 function mergeAndPruneArchive(newArticles) {
   const byLink = new Map();
   const now = Date.now();
+  // 先用本次接口返回的数据（含翻译）覆盖，确保显示最新翻译结果
+  for (const a of newArticles || []) {
+    if (a.link) byLink.set(a.link, { ...a, fetchedAt: a.fetchedAt || new Date().toISOString() });
+  }
+  // 再补入存档里本周内、且本次未返回的旧条
   for (const a of getArchive()) {
-    if (a.link && a.pubDate) {
+    if (a.link && a.pubDate && !byLink.has(a.link)) {
       const t = new Date(a.pubDate).getTime();
       if (now - t <= ARCHIVE_DAYS_MS) byLink.set(a.link, a);
-    }
-  }
-  for (const a of newArticles || []) {
-    if (!a.link) continue;
-    const existing = byLink.get(a.link);
-    if (!existing || (a.pubDate && (!existing.pubDate || new Date(a.pubDate) > new Date(existing.pubDate)))) {
-      byLink.set(a.link, { ...a, fetchedAt: a.fetchedAt || new Date().toISOString() });
     }
   }
   const merged = Array.from(byLink.values()).filter((a) => {
@@ -356,3 +354,14 @@ async function load() {
 
 load();
 setInterval(load, REFRESH_INTERVAL_MS);
+
+const $btnClearCache = document.getElementById('btn-clear-cache');
+if ($btnClearCache) {
+  $btnClearCache.addEventListener('click', () => {
+    try {
+      localStorage.removeItem(ARCHIVE_KEY);
+      currentPage = 1;
+      load();
+    } catch (_) {}
+  });
+}

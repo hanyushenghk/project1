@@ -262,6 +262,23 @@ body {
   color: var(--muted);
 }
 
+.btn-clear-cache {
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-clear-cache:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+
 /* 分页 */
 .pagination {
   margin-top: 1.5rem;
