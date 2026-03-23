@@ -324,11 +324,16 @@ function getMoodPalette(mood) {
   return { a: "#1d4ed8", b: "#0891b2", c: "#6366f1" };
 }
 
-function createSceneImage(node) {
+function createSceneImage(node, frameSeed) {
   if (!node) return "";
   const icon = SCENE_ICON[node.id] || "🌆";
   const palette = getMoodPalette(node.mood);
   const title = String(node.title || "末日场景").slice(0, 10);
+  const pulseX = 70 + ((frameSeed * 37) % 220);
+  const pulseY = 90 + ((frameSeed * 29) % 150);
+  const pulseR = 90 + ((frameSeed * 17) % 70);
+  const scanDur = 3.2 + ((frameSeed % 5) * 0.35);
+  const iconY = 120 + ((frameSeed % 3) - 1) * 6;
   const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520">
   <defs>
@@ -344,6 +349,9 @@ function createSceneImage(node) {
     </linearGradient>
   </defs>
   <rect width="1200" height="520" fill="url(#bg)" />
+  <circle cx="${pulseX}" cy="${pulseY}" r="${pulseR}" fill="rgba(255,255,255,0.1)">
+    <animate attributeName="r" values="${pulseR};${pulseR + 26};${pulseR}" dur="2.6s" repeatCount="indefinite" />
+  </circle>
   <circle cx="980" cy="110" r="140" fill="rgba(255,255,255,0.13)" />
   <rect x="0" y="330" width="1200" height="190" fill="rgba(2,6,23,0.42)" />
   <rect x="84" y="262" width="122" height="258" fill="rgba(2,6,23,0.65)" />
@@ -351,10 +359,10 @@ function createSceneImage(node) {
   <rect x="434" y="278" width="118" height="242" fill="rgba(2,6,23,0.62)" />
   <rect x="598" y="248" width="195" height="272" fill="rgba(2,6,23,0.68)" />
   <rect x="828" y="206" width="150" height="314" fill="rgba(2,6,23,0.72)" />
-  <text x="80" y="120" fill="rgba(255,255,255,0.95)" font-size="62" font-family="Arial, sans-serif">${icon}</text>
+  <text x="80" y="${iconY}" fill="rgba(255,255,255,0.95)" font-size="62" font-family="Arial, sans-serif">${icon}</text>
   <text x="160" y="124" fill="rgba(255,255,255,0.95)" font-size="44" font-family="Arial, sans-serif">${title}</text>
   <rect x="-300" y="0" width="300" height="520" fill="url(#scan)">
-    <animate attributeName="x" from="-300" to="1300" dur="4s" repeatCount="indefinite" />
+    <animate attributeName="x" from="-300" to="1300" dur="${scanDur}s" repeatCount="indefinite" />
   </rect>
 </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
@@ -403,13 +411,14 @@ function App() {
   const [shareMsg, setShareMsg] = useState("");
   const [decisionCount, setDecisionCount] = useState(0);
   const [activeEvent, setActiveEvent] = useState(null);
+  const [sceneFrame, setSceneFrame] = useState(0);
 
   const node = STORY[nodeId];
   const isOver = Boolean(ending);
   const typedScene = useTypewriter(isOver ? ENDINGS[ending].desc : node.text, 20, [nodeId, ending]);
   const progress = Math.round((hour / MAX_HOUR) * 100);
   const bgStyle = useMemo(() => ({ backgroundImage: getBackground(node.mood) }), [node.mood]);
-  const sceneImage = useMemo(() => createSceneImage(node), [node.id, node.mood, node.title]);
+  const sceneImage = useMemo(() => createSceneImage(node, sceneFrame), [node.id, node.mood, node.title, sceneFrame]);
   const shareText = useMemo(() => {
     if (!ending) return "";
     return `我在末日生存了${hour}小时，结局是【${ENDINGS[ending].title.replace("结局：", "")}】，体力${stats.energy}/物资${stats.supplies}/信任${stats.trust}，你能比我强吗？`;
@@ -426,6 +435,7 @@ function App() {
     setStats(nextStats);
     setHour(nextHour);
     setDecisionCount(nextDecisionCount);
+    setSceneFrame((v) => v + 1);
     setLogs((prev) => [`[${nextHour}h] ${choice.text}`, ...prev].slice(0, 12));
 
     if (forcedEnding || nextEnding) {
@@ -448,6 +458,7 @@ function App() {
     setShareMsg("");
     setDecisionCount(0);
     setActiveEvent(null);
+    setSceneFrame(0);
   };
 
   const onChooseEvent = (choice) => {
