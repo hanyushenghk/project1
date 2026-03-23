@@ -20,6 +20,8 @@
   const byId = new Map(catalog.map((s) => [s.id, s]));
 
   let prefs = loadPrefs();
+  /** 本会话里「为你推荐」已展示过的曲库歌曲 id，换一批时不再出现直到轮换 */
+  const shownRecommendIds = new Set();
   const playingIds = new Set();
   let tickTimer = null;
   /** @type {YT.Player[]} */
@@ -89,38 +91,57 @@
     return out.slice(0, Math.min(10, catalog.length));
   }
 
-  /** 换一批：在偏好高分池内随机抽样，仍偏向你喜欢的风格 */
+  function rememberShownRecommend(songs) {
+    songs.forEach((s) => {
+      if (s && s.id) shownRecommendIds.add(s.id);
+    });
+  }
+
+  /**
+   * 换一批：在偏好高分池内随机抽样；排除本会话已展示过的歌曲，不够则清空记录后重新轮换。
+   * @returns {{ songs: typeof catalog, cycled: boolean }}
+   */
   function pickTenSongsVariety() {
-    if (catalog.length === 0) return [];
+    if (catalog.length === 0) return { songs: [], cycled: false };
+    const want = Math.min(10, catalog.length);
+
+    let candidates = catalog.filter((s) => !shownRecommendIds.has(s.id));
+    let cycled = false;
+    if (candidates.length < want) {
+      shownRecommendIds.clear();
+      candidates = catalog.slice();
+      cycled = catalog.length > 0;
+    }
+
     const total = totalListenSeconds();
     if (total < MIN_TOTAL_SEC_FOR_PREF) {
-      return shuffle(catalog).slice(0, Math.min(10, catalog.length));
+      return { songs: shuffle(candidates).slice(0, want), cycled };
     }
     const tagScores = prefs.tagScores || {};
     function scoreSong(s) {
       return (s.tags || []).reduce((acc, t) => acc + (Number(tagScores[t]) || 0), 0);
     }
-    const ranked = catalog.map((s) => ({ s, sc: scoreSong(s) })).sort((a, b) => b.sc - a.sc);
-    const poolSize = Math.min(28, Math.max(14, catalog.length));
+    const ranked = candidates.map((s) => ({ s, sc: scoreSong(s) })).sort((a, b) => b.sc - a.sc);
+    const poolSize = Math.min(28, Math.max(14, candidates.length));
     const pool = ranked.slice(0, poolSize).map((x) => x.s);
     const shuffled = shuffle(pool);
     const out = [];
     const seen = new Set();
     for (const s of shuffled) {
-      if (out.length >= 10) break;
+      if (out.length >= want) break;
       if (seen.has(s.id)) continue;
       seen.add(s.id);
       out.push(s);
     }
-    if (out.length < 10) {
-      for (const s of shuffle(catalog)) {
-        if (out.length >= 10) break;
+    if (out.length < want) {
+      for (const s of shuffle(candidates)) {
+        if (out.length >= want) break;
         if (seen.has(s.id)) continue;
         seen.add(s.id);
         out.push(s);
       }
     }
-    return out.slice(0, Math.min(10, catalog.length));
+    return { songs: out.slice(0, want), cycled };
   }
 
   function bumpVideoSeconds(videoId) {
@@ -279,19 +300,32 @@
     }
     const total = totalListenSeconds();
     const usedPref = total >= MIN_TOTAL_SEC_FOR_PREF;
-    const songs = variety ? pickTenSongsVariety() : pickTenSongs();
+    let songs;
+    let varietyCycled = false;
+    if (variety) {
+      const r = pickTenSongsVariety();
+      songs = r.songs;
+      varietyCycled = r.cycled;
+    } else {
+      songs = pickTenSongs();
+    }
     renderGrid(songs);
     if (variety) {
       if ($hint) {
-        $hint.textContent = usedPref
-          ? '已根据你的收听偏好换了一批推荐（仍优先匹配常听风格）。'
-          : '已随机换了一批推荐。多听一会儿后，换一批会更贴合你的口味。';
+        let t = usedPref
+          ? '已根据你的收听偏好换了一批推荐（不包含本页之前出现过的歌曲）。'
+          : '已随机换了一批推荐（不包含本页之前出现过的歌曲）。';
+        if (varietyCycled) {
+          t += ' 可推荐的歌曲已全部轮流展示过，已重新开始轮换。';
+        }
+        $hint.textContent = t;
       }
     } else {
       updateHintRecommend(usedPref);
     }
     setSectionTitle(`为你推荐（${songs.length} 首）`);
     createPlayers(songs, { autoplayFirst: true });
+    rememberShownRecommend(songs);
   }
 
   async function showSearchResults() {
