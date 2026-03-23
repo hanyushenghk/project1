@@ -1,0 +1,169 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --line: #2d333b;
+  --text: #e6edf3;
+  --muted: #9da7b3;
+  --accent: #f0883e;
+  --danger: #f85149;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Source Sans 3", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at top, #1f2937 0%, var(--bg) 55%);
+  min-height: 100vh;
+}
+
+.hero {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 16px 10px;
+}
+
+.back-link {
+  color: #c9d1d9;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+h1 {
+  margin: 10px 0 8px;
+  font-size: 2rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+.container {
+  max-width: 980px;
+  margin: 14px auto 40px;
+  padding: 0 16px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+.status-panel,
+.story-panel,
+.log-panel {
+  background: color-mix(in srgb, var(--panel) 92%, #000);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.stat span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.stat strong {
+  font-size: 1.1rem;
+}
+
+.hint {
+  margin: 10px 0 0;
+  color: #ffd8a8;
+}
+
+#scene-title {
+  margin-top: 0;
+}
+
+#scene-text {
+  line-height: 1.7;
+  color: #dfe7ef;
+  white-space: pre-line;
+}
+
+.choices {
+  display: grid;
+  gap: 10px;
+}
+
+.choice-btn,
+.restart-btn {
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  background: #222b36;
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.2s ease;
+}
+
+.choice-btn:hover,
+.restart-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.restart-btn {
+  margin-top: 12px;
+  text-align: center;
+  background: #315a95;
+}
+
+.hidden {
+  display: none;
+}
+
+.log-panel h3 {
+  margin: 4px 0 8px;
+}
+
+#log-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #c3ccd5;
+}
+
+#log-list li + li {
+  margin-top: 6px;
+}
+
+.bad {
+  color: var(--danger);
+}
+
+.good {
+  color: #7ee787;
+}
+
+@media (max-width: 720px) {
+  .status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
