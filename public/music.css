@@ -122,6 +122,20 @@ body {
   filter: brightness(1.08);
 }
 
+.btn-week-popular {
+  background: #2d6a4f;
+  color: #fff;
+}
+
+.btn-week-popular:hover {
+  filter: brightness(1.1);
+}
+
+.btn-week-popular:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-back-recommend {
   background: transparent;
   color: var(--muted);

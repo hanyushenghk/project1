@@ -9,6 +9,9 @@
     },
     "api/youtube-search.js": {
       "maxDuration": 15
+    },
+    "api/youtube-week-popular.js": {
+      "maxDuration": 20
     }
   }
 }

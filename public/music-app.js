@@ -8,8 +8,12 @@
   const $sectionTitle = document.getElementById('music-section-title');
   const $searchInput = document.getElementById('music-search-input');
   const $searchBtn = document.getElementById('music-search-btn');
+  const $weekPopularBtn = document.getElementById('music-week-popular-btn');
   const $backRecommend = document.getElementById('music-back-recommend');
   const $btnReset = document.getElementById('btn-reset-music-prefs');
+
+  /** 非曲库视频播放计分用（搜索 / 一周热门） */
+  let externalPlayTag = 'youtube-search';
 
   /** @type {Map<string, {id:string,title:string,artist:string,tags:string[]}>} */
   const byId = new Map(catalog.map((s) => [s.id, s]));
@@ -92,7 +96,7 @@
         prefs.tagScores[t] = (Number(prefs.tagScores[t]) || 0) + 1;
       }
     } else {
-      prefs.tagScores['youtube-search'] = (Number(prefs.tagScores['youtube-search']) || 0) + 1;
+      prefs.tagScores[externalPlayTag] = (Number(prefs.tagScores[externalPlayTag]) || 0) + 1;
     }
   }
 
@@ -228,6 +232,7 @@
 
   function showRecommend() {
     if (!$grid) return;
+    externalPlayTag = 'youtube-search';
     destroyPlayers();
     if (!catalog.length) {
       $grid.innerHTML =
@@ -254,6 +259,7 @@
       return;
     }
 
+    externalPlayTag = 'youtube-search';
     if ($searchBtn) $searchBtn.disabled = true;
     setSectionTitle('正在搜索 YouTube…');
     if ($hint) $hint.textContent = '正在从 YouTube 获取结果…';
@@ -277,6 +283,7 @@
     destroyPlayers();
 
     if (ytVideos && ytVideos.length) {
+      externalPlayTag = 'youtube-search';
       setSectionTitle(`YouTube 搜索结果（${ytVideos.length} 个）`);
       if ($hint) $hint.textContent = `已显示与「${q}」相关的 YouTube 视频（最多 15 个）。`;
       renderGrid(ytVideos);
@@ -303,8 +310,65 @@
         '<p class="search-empty" role="status">未找到匹配结果。可换个关键词试试，或点击「返回推荐」。</p>';
       return;
     }
+    externalPlayTag = 'youtube-search';
     renderGrid(local);
     createPlayers(local, { autoplayFirst: false });
+  }
+
+  async function showWeekPopular() {
+    if (!$grid) return;
+    externalPlayTag = 'youtube-week-popular';
+    if ($weekPopularBtn) $weekPopularBtn.disabled = true;
+    if ($searchBtn) $searchBtn.disabled = true;
+    setSectionTitle('正在加载一周热门…');
+    if ($hint) {
+      $hint.textContent =
+        '正在从 YouTube 拉取近 7 天音乐类高播放量视频（不足时会补充台湾地区音乐热门榜）…';
+    }
+
+    let ytVideos = null;
+    let err = null;
+    try {
+      const r = await fetch('/api/youtube-week-popular');
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.videos && data.videos.length > 0) {
+        ytVideos = data.videos;
+      } else {
+        err = data.error || (r.status === 503 ? 'missing_api_key' : 'fetch_failed');
+      }
+    } catch (_) {
+      err = 'network';
+    } finally {
+      if ($weekPopularBtn) $weekPopularBtn.disabled = false;
+      if ($searchBtn) $searchBtn.disabled = false;
+    }
+
+    destroyPlayers();
+
+    if (ytVideos && ytVideos.length) {
+      setSectionTitle(`一周热门流行（${ytVideos.length} 个）`);
+      const note =
+        '列表优先为「近 7 天上传 · 音乐分区 · 按播放量」；条目较少时会混入 YouTube 台湾地区音乐热门榜。';
+      if ($hint) $hint.textContent = note;
+      renderGrid(ytVideos);
+      createPlayers(ytVideos, { autoplayFirst: false });
+      return;
+    }
+
+    externalPlayTag = 'youtube-search';
+    setSectionTitle('一周热门');
+    if (err === 'missing_api_key') {
+      if ($hint) {
+        $hint.textContent =
+          '未配置 YOUTUBE_API_KEY，无法拉取 YouTube 一周热门。请在服务器或 Vercel 环境变量中配置后重新部署。';
+      }
+    } else if (err === 'network') {
+      if ($hint) $hint.textContent = '网络错误，无法获取一周热门列表。';
+    } else {
+      if ($hint) $hint.textContent = '暂时无法获取一周热门（API 错误或配额不足）。';
+    }
+    $grid.innerHTML =
+      '<p class="search-empty" role="status">加载失败。请检查 API 密钥与配额，或稍后再试。</p>';
   }
 
   function init() {
@@ -329,6 +393,11 @@
       $backRecommend.addEventListener('click', () => {
         if ($searchInput) $searchInput.value = '';
         showRecommend();
+      });
+    }
+    if ($weekPopularBtn) {
+      $weekPopularBtn.addEventListener('click', () => {
+        showWeekPopular();
       });
     }
   }
