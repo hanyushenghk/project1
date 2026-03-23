@@ -184,9 +184,19 @@
     }
   }
 
+  function pauseOtherPlayers(currentPlayer) {
+    players.forEach((p) => {
+      if (p === currentPlayer) return;
+      try {
+        if (p && typeof p.pauseVideo === 'function') p.pauseVideo();
+      } catch (_) {}
+    });
+  }
+
   function onPlayerStateChange(event) {
     const id = event.target.getVideoData().video_id;
     if (event.data === YT.PlayerState.PLAYING) {
+      pauseOtherPlayers(event.target);
       playingIds.add(id);
       startTick();
     } else {
