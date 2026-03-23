@@ -322,8 +322,7 @@
     if ($searchBtn) $searchBtn.disabled = true;
     setSectionTitle('正在加载一周热门…');
     if ($hint) {
-      $hint.textContent =
-        '正在从 YouTube 拉取近 7 天音乐类高播放量视频（不足时会补充台湾地区音乐热门榜）…';
+      $hint.textContent = '正在从 YouTube 拉取最近 7 天上传的音乐视频，并按播放量从高到低排序…';
     }
 
     let ytVideos = null;
@@ -347,8 +346,7 @@
 
     if (ytVideos && ytVideos.length) {
       setSectionTitle(`一周热门流行（${ytVideos.length} 个）`);
-      const note =
-        '列表优先为「近 7 天上传 · 音乐分区 · 按播放量」；条目较少时会混入 YouTube 台湾地区音乐热门榜。';
+      const note = '列表为「近 7 天上传 · 音乐分区」并按播放量降序，不区分中文或英文歌曲。';
       if ($hint) $hint.textContent = note;
       renderGrid(ytVideos);
       createPlayers(ytVideos, { autoplayFirst: false });

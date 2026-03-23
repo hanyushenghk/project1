@@ -150,7 +150,7 @@ app.get('/api/youtube-search', async (req, res) => {
   }
 });
 
-/** 近一周热门流行（音乐）：search 近7天+播放量 + 不足时补热门榜 */
+/** 最近一周热门音乐：近7天上传 + 音乐分区 + 按播放量降序（不区分语言） */
 app.get('/api/youtube-week-popular', async (req, res) => {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
@@ -171,16 +171,6 @@ app.get('/api/youtube-week-popular', async (req, res) => {
         tags: ['youtube-week-popular'],
       }));
   }
-  function mapChartItems(items) {
-    return (items || [])
-      .filter((item) => item.id)
-      .map((item) => ({
-        id: typeof item.id === 'string' ? item.id : item.id.videoId,
-        title: item.snippet.title || '无标题',
-        artist: item.snippet.channelTitle || 'YouTube',
-        tags: ['youtube-week-popular'],
-      }));
-  }
   try {
     const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
     searchUrl.searchParams.set('part', 'snippet');
@@ -189,9 +179,6 @@ app.get('/api/youtube-week-popular', async (req, res) => {
     searchUrl.searchParams.set('publishedAfter', publishedAfter);
     searchUrl.searchParams.set('order', 'viewCount');
     searchUrl.searchParams.set('maxResults', '15');
-    searchUrl.searchParams.set('q', '流行 音乐 MV');
-    searchUrl.searchParams.set('relevanceLanguage', 'zh');
-    searchUrl.searchParams.set('regionCode', 'TW');
     searchUrl.searchParams.set('key', apiKey);
     const r1 = await fetch(searchUrl.toString(), { signal: AbortSignal.timeout(12000) });
     const d1 = await r1.json();
@@ -199,51 +186,8 @@ app.get('/api/youtube-week-popular', async (req, res) => {
       const msg = d1.error && d1.error.message ? d1.error.message : r1.statusText;
       return res.status(500).json({ videos: [], error: msg });
     }
-    let videos = mapSearchItems(d1.items);
-    let source = 'youtube-week-search';
-
-    if (videos.length < 8) {
-      const chartUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
-      chartUrl.searchParams.set('part', 'snippet');
-      chartUrl.searchParams.set('chart', 'mostPopular');
-      chartUrl.searchParams.set('videoCategoryId', '10');
-      chartUrl.searchParams.set('regionCode', 'TW');
-      chartUrl.searchParams.set('maxResults', '15');
-      chartUrl.searchParams.set('key', apiKey);
-      const r2 = await fetch(chartUrl.toString(), { signal: AbortSignal.timeout(12000) });
-      const d2 = await r2.json();
-      if (r2.ok && d2.items) {
-        const chart = mapChartItems(d2.items);
-        const seen = new Set(videos.map((v) => v.id));
-        for (const v of chart) {
-          if (videos.length >= 15) break;
-          if (!seen.has(v.id)) {
-            seen.add(v.id);
-            videos.push(v);
-          }
-        }
-        source = videos.length ? 'youtube-week-mixed' : 'youtube-chart';
-      }
-    }
-
-    if (videos.length === 0) {
-      const chartUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
-      chartUrl.searchParams.set('part', 'snippet');
-      chartUrl.searchParams.set('chart', 'mostPopular');
-      chartUrl.searchParams.set('videoCategoryId', '10');
-      chartUrl.searchParams.set('regionCode', 'TW');
-      chartUrl.searchParams.set('maxResults', '15');
-      chartUrl.searchParams.set('key', apiKey);
-      const r3 = await fetch(chartUrl.toString(), { signal: AbortSignal.timeout(12000) });
-      const d3 = await r3.json();
-      if (!r3.ok) {
-        const msg = d3.error && d3.error.message ? d3.error.message : r3.statusText;
-        return res.status(500).json({ videos: [], error: msg });
-      }
-      videos = mapChartItems(d3.items);
-      source = 'youtube-chart-only';
-    }
-
+    const videos = mapSearchItems(d1.items);
+    const source = 'youtube-week-viewcount';
     res.json({ videos, source });
   } catch (err) {
     console.error(err);

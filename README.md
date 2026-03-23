@@ -64,7 +64,7 @@ The “latest” is simply the first of the 10 (newest by publication date).
 
 打开 **http://localhost:3000/music.html**（或线上 `/music.html`）。搜索框会请求 **`/api/youtube-search`**，使用 [YouTube Data API v3](https://developers.google.com/youtube/v3) 拉取最多 **15** 条视频并在本页用播放器展示。
 
-「**一周热门流行**」按钮会请求 **`/api/youtube-week-popular`**：优先列出「近 7 天上传 · 音乐分区 · 按播放量」的视频；若结果较少，会补充台湾地区 **YouTube 音乐热门榜**（`chart=mostPopular`）。
+「**一周热门流行**」按钮会请求 **`/api/youtube-week-popular`**：列出「近 7 天上传 · 音乐分区 · 按播放量降序」的视频，不区分中文或英文歌曲。
 
 ### 配置 `YOUTUBE_API_KEY`
 
