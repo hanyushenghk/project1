@@ -29,6 +29,8 @@ async function fetchWeekMusicByViews(apiKey) {
   url.searchParams.set('publishedAfter', publishedAfter7DaysAgo());
   url.searchParams.set('order', 'viewCount');
   url.searchParams.set('maxResults', '15');
+  // `q` 必填更稳定；使用中性关键词，不区分中文/英文
+  url.searchParams.set('q', 'music');
   url.searchParams.set('key', apiKey);
   const res = await fetch(url.toString(), { signal: AbortSignal.timeout(12000) });
   const data = await res.json();

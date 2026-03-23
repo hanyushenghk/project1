@@ -179,6 +179,8 @@ app.get('/api/youtube-week-popular', async (req, res) => {
     searchUrl.searchParams.set('publishedAfter', publishedAfter);
     searchUrl.searchParams.set('order', 'viewCount');
     searchUrl.searchParams.set('maxResults', '15');
+    // `q` 必填更稳定；使用中性关键词，不区分中文/英文
+    searchUrl.searchParams.set('q', 'music');
     searchUrl.searchParams.set('key', apiKey);
     const r1 = await fetch(searchUrl.toString(), { signal: AbortSignal.timeout(12000) });
     const d1 = await r1.json();
