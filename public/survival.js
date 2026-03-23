@@ -294,6 +294,72 @@ function getBackground(mood) {
   return "radial-gradient(circle at 20% 15%, rgba(59,130,246,0.22), transparent 45%), radial-gradient(circle at 80% 20%, rgba(6,182,212,0.18), transparent 45%), linear-gradient(180deg, #020617 0%, #0f172a 100%)";
 }
 
+const SCENE_ICON = {
+  start: "⚡",
+  scan_home: "📻",
+  garage: "🚗",
+  neighbors: "👥",
+  rooftop: "🛰️",
+  store_raid: "🛒",
+  radio_signal: "📡",
+  water_line: "🚰",
+  riot_cross: "🚧",
+  clinic: "🧪",
+  checkpoint: "🪖",
+  bridge_night: "🌉",
+  tunnel: "🚇",
+  escort: "🫂",
+  dark_offer: "🕶️",
+  school_shelter: "🏫",
+  final_gate: "🚪",
+};
+
+function getMoodPalette(mood) {
+  if (mood === "day") {
+    return { a: "#0ea5e9", b: "#22d3ee", c: "#a855f7" };
+  }
+  if (mood === "danger") {
+    return { a: "#ef4444", b: "#f97316", c: "#fb7185" };
+  }
+  return { a: "#1d4ed8", b: "#0891b2", c: "#6366f1" };
+}
+
+function createSceneImage(node) {
+  if (!node) return "";
+  const icon = SCENE_ICON[node.id] || "🌆";
+  const palette = getMoodPalette(node.mood);
+  const title = String(node.title || "末日场景").slice(0, 10);
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${palette.a}" />
+      <stop offset="55%" stop-color="${palette.b}" />
+      <stop offset="100%" stop-color="${palette.c}" />
+    </linearGradient>
+    <linearGradient id="scan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(255,255,255,0)" />
+      <stop offset="50%" stop-color="rgba(255,255,255,0.35)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="520" fill="url(#bg)" />
+  <circle cx="980" cy="110" r="140" fill="rgba(255,255,255,0.13)" />
+  <rect x="0" y="330" width="1200" height="190" fill="rgba(2,6,23,0.42)" />
+  <rect x="84" y="262" width="122" height="258" fill="rgba(2,6,23,0.65)" />
+  <rect x="242" y="222" width="165" height="298" fill="rgba(2,6,23,0.7)" />
+  <rect x="434" y="278" width="118" height="242" fill="rgba(2,6,23,0.62)" />
+  <rect x="598" y="248" width="195" height="272" fill="rgba(2,6,23,0.68)" />
+  <rect x="828" y="206" width="150" height="314" fill="rgba(2,6,23,0.72)" />
+  <text x="80" y="120" fill="rgba(255,255,255,0.95)" font-size="62" font-family="Arial, sans-serif">${icon}</text>
+  <text x="160" y="124" fill="rgba(255,255,255,0.95)" font-size="44" font-family="Arial, sans-serif">${title}</text>
+  <rect x="-300" y="0" width="300" height="520" fill="url(#scan)">
+    <animate attributeName="x" from="-300" to="1300" dur="4s" repeatCount="indefinite" />
+  </rect>
+</svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 function applyEffects(stats, effects) {
   const next = { ...stats };
   Object.keys(effects).forEach((k) => {
@@ -343,6 +409,7 @@ function App() {
   const typedScene = useTypewriter(isOver ? ENDINGS[ending].desc : node.text, 20, [nodeId, ending]);
   const progress = Math.round((hour / MAX_HOUR) * 100);
   const bgStyle = useMemo(() => ({ backgroundImage: getBackground(node.mood) }), [node.mood]);
+  const sceneImage = useMemo(() => createSceneImage(node), [node.id, node.mood, node.title]);
   const shareText = useMemo(() => {
     if (!ending) return "";
     return `我在末日生存了${hour}小时，结局是【${ENDINGS[ending].title.replace("结局：", "")}】，体力${stats.energy}/物资${stats.supplies}/信任${stats.trust}，你能比我强吗？`;
@@ -441,6 +508,16 @@ function App() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="space-y-3 lg:col-span-2">
             <h2 className="text-2xl font-semibold">{isOver ? ENDINGS[ending].title : node.title}</h2>
+            {!isOver ? (
+              <div className="relative overflow-hidden rounded-lg border border-cyan-300/30 bg-slate-900/60">
+                <img
+                  src={sceneImage}
+                  alt={`${node.title} 动画场景图`}
+                  className="h-44 w-full object-cover opacity-95 transition duration-700 hover:scale-[1.02] sm:h-56"
+                />
+                <div className="pointer-events-none absolute inset-0 animate-pulse bg-gradient-to-r from-cyan-400/0 via-cyan-200/10 to-fuchsia-300/0" />
+              </div>
+            ) : null}
             <p className="min-h-[130px] whitespace-pre-line leading-7 text-slate-100/95">{typedScene}</p>
 
             {!isOver ? (
