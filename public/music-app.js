@@ -9,6 +9,7 @@
   const $searchInput = document.getElementById('music-search-input');
   const $searchBtn = document.getElementById('music-search-btn');
   const $weekPopularBtn = document.getElementById('music-week-popular-btn');
+  const $refreshBatchBtn = document.getElementById('music-refresh-batch');
   const $backRecommend = document.getElementById('music-back-recommend');
   const $btnReset = document.getElementById('btn-reset-music-prefs');
 
@@ -72,6 +73,40 @@
     const out = [];
     const seen = new Set();
     for (const { s } of ranked) {
+      if (out.length >= 10) break;
+      if (seen.has(s.id)) continue;
+      seen.add(s.id);
+      out.push(s);
+    }
+    if (out.length < 10) {
+      for (const s of shuffle(catalog)) {
+        if (out.length >= 10) break;
+        if (seen.has(s.id)) continue;
+        seen.add(s.id);
+        out.push(s);
+      }
+    }
+    return out.slice(0, Math.min(10, catalog.length));
+  }
+
+  /** 换一批：在偏好高分池内随机抽样，仍偏向你喜欢的风格 */
+  function pickTenSongsVariety() {
+    if (catalog.length === 0) return [];
+    const total = totalListenSeconds();
+    if (total < MIN_TOTAL_SEC_FOR_PREF) {
+      return shuffle(catalog).slice(0, Math.min(10, catalog.length));
+    }
+    const tagScores = prefs.tagScores || {};
+    function scoreSong(s) {
+      return (s.tags || []).reduce((acc, t) => acc + (Number(tagScores[t]) || 0), 0);
+    }
+    const ranked = catalog.map((s) => ({ s, sc: scoreSong(s) })).sort((a, b) => b.sc - a.sc);
+    const poolSize = Math.min(28, Math.max(14, catalog.length));
+    const pool = ranked.slice(0, poolSize).map((x) => x.s);
+    const shuffled = shuffle(pool);
+    const out = [];
+    const seen = new Set();
+    for (const s of shuffled) {
       if (out.length >= 10) break;
       if (seen.has(s.id)) continue;
       seen.add(s.id);
@@ -230,8 +265,9 @@
     });
   }
 
-  function showRecommend() {
+  function showRecommend(opts) {
     if (!$grid) return;
+    const variety = opts && opts.variety === true;
     externalPlayTag = 'youtube-search';
     destroyPlayers();
     if (!catalog.length) {
@@ -243,9 +279,17 @@
     }
     const total = totalListenSeconds();
     const usedPref = total >= MIN_TOTAL_SEC_FOR_PREF;
-    const songs = pickTenSongs();
+    const songs = variety ? pickTenSongsVariety() : pickTenSongs();
     renderGrid(songs);
-    updateHintRecommend(usedPref);
+    if (variety) {
+      if ($hint) {
+        $hint.textContent = usedPref
+          ? '已根据你的收听偏好换了一批推荐（仍优先匹配常听风格）。'
+          : '已随机换了一批推荐。多听一会儿后，换一批会更贴合你的口味。';
+      }
+    } else {
+      updateHintRecommend(usedPref);
+    }
     setSectionTitle(`为你推荐（${songs.length} 首）`);
     createPlayers(songs, { autoplayFirst: true });
   }
@@ -391,6 +435,11 @@
       $backRecommend.addEventListener('click', () => {
         if ($searchInput) $searchInput.value = '';
         showRecommend();
+      });
+    }
+    if ($refreshBatchBtn) {
+      $refreshBatchBtn.addEventListener('click', () => {
+        showRecommend({ variety: true });
       });
     }
     if ($weekPopularBtn) {

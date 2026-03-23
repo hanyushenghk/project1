@@ -136,6 +136,20 @@ body {
   cursor: not-allowed;
 }
 
+.btn-refresh-batch {
+  background: #3d5a80;
+  color: #fff;
+}
+
+.btn-refresh-batch:hover {
+  filter: brightness(1.08);
+}
+
+.btn-refresh-batch:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-back-recommend {
   background: transparent;
   color: var(--muted);
