@@ -60,6 +60,22 @@ The “latest” is simply the first of the 10 (newest by publication date).
 
 ---
 
+## 音乐页与 YouTube 搜索（`/music.html`）
+
+打开 **http://localhost:3000/music.html**（或线上 `/music.html`）。搜索框会请求 **`/api/youtube-search`**，使用 [YouTube Data API v3](https://developers.google.com/youtube/v3) 拉取最多 **15** 条视频并在本页用播放器展示。
+
+### 配置 `YOUTUBE_API_KEY`
+
+1. 在 [Google Cloud Console](https://console.cloud.google.com/) 创建/选择项目，启用 **YouTube Data API v3**，在「凭据」里创建 **API 密钥**。
+2. **本地**：任选其一  
+   - 在项目根目录创建 `.env`（可参考 `.env.example`），写入 `YOUTUBE_API_KEY=你的密钥`，然后 `npm start`（`server.js` 会自动加载 `.env`）。  
+   - 或在终端执行：`export YOUTUBE_API_KEY="你的密钥"` 后再 `npm start`。
+3. **Vercel**：项目 **Settings → Environment Variables** 中添加 `YOUTUBE_API_KEY`，保存后重新部署。
+
+未配置密钥或接口失败时，搜索会**自动退回**站内曲库（`public/music-catalog.js`）的文本匹配。
+
+---
+
 ## 发布到你的域名（如 hkcompass.org）
 
 本项目已支持 [Vercel](https://vercel.com) 部署，部署后可绑定自定义域名 **https://hkcompass.org/**。

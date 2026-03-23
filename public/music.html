@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-M59BZN85');</script>
+  <!-- End Google Tag Manager -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>中文流行 · 智能推荐听歌</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="music.css" />
+</head>
+<body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M59BZN85"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
+  <header class="music-header">
+    <a href="/" class="back-link">← 返回首页</a>
+    <h1>中文流行 · 智能推荐</h1>
+    <p id="music-hint" class="music-hint">正在加载…</p>
+  </header>
+
+  <main class="music-main">
+    <div class="music-search" role="search">
+      <label class="sr-only" for="music-search-input">搜索歌手或歌曲</label>
+      <input type="search" id="music-search-input" placeholder="在 YouTube 上搜索歌手或歌曲…" autocomplete="off" />
+      <button type="button" id="music-search-btn">搜索</button>
+      <button type="button" id="music-back-recommend" class="btn-back-recommend">返回推荐</button>
+    </div>
+    <h2 id="music-section-title" class="music-section-title" aria-live="polite"></h2>
+    <div id="music-grid" class="music-grid"></div>
+  </main>
+
+  <footer class="music-footer">
+    <p>搜索由 <strong>YouTube Data API</strong> 提供（需在服务器配置 <code>YOUTUBE_API_KEY</code>）；未配置时会改为搜索本站曲库。</p>
+    <p>说明：根据你在每首歌上的<strong>实际播放时长</strong>记录喜好；刷新页面后会优先推荐风格相近的歌曲。浏览器可能限制有声自动播放，可先点击播放。</p>
+    <button type="button" id="btn-reset-music-prefs" class="btn-reset-prefs">清除听歌偏好数据</button>
+  </footer>
+
+  <script src="music-catalog.js"></script>
+  <script src="music-app.js"></script>
+</body>
+</html>

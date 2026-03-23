@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const Parser = require('rss-parser');
@@ -106,6 +107,46 @@ app.get('/api/news', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch news', articles: [] });
+  }
+});
+
+/** YouTube Data API v3 搜索（需环境变量 YOUTUBE_API_KEY） */
+app.get('/api/youtube-search', async (req, res) => {
+  const q = (req.query.q || '').toString().trim();
+  if (!q) {
+    return res.status(400).json({ videos: [], error: 'empty_query' });
+  }
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({ videos: [], error: 'missing_api_key' });
+  }
+  try {
+    const url = new URL('https://www.googleapis.com/youtube/v3/search');
+    url.searchParams.set('part', 'snippet');
+    url.searchParams.set('q', q);
+    url.searchParams.set('type', 'video');
+    url.searchParams.set('maxResults', '15');
+    url.searchParams.set('relevanceLanguage', 'zh');
+    url.searchParams.set('regionCode', 'TW');
+    url.searchParams.set('key', apiKey);
+    const r = await fetch(url.toString(), { signal: AbortSignal.timeout(12000) });
+    const data = await r.json();
+    if (!r.ok) {
+      const msg = data.error && data.error.message ? data.error.message : r.statusText;
+      return res.status(500).json({ videos: [], error: msg });
+    }
+    const videos = (data.items || [])
+      .filter((item) => item.id && item.id.videoId)
+      .map((item) => ({
+        id: item.id.videoId,
+        title: item.snippet.title || '无标题',
+        artist: item.snippet.channelTitle || 'YouTube',
+        tags: ['youtube-search'],
+      }));
+    res.json({ videos, source: 'youtube' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ videos: [], error: err.message || 'search_failed' });
   }
 });
 

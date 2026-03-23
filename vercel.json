@@ -6,6 +6,9 @@
   "functions": {
     "api/news.js": {
       "maxDuration": 25
+    },
+    "api/youtube-search.js": {
+      "maxDuration": 15
     }
   }
 }
